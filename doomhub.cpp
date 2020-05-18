@@ -17,7 +17,7 @@ DoomHub::DoomHub(QWidget *parent)
 {
     ui->setupUi(this);
 
-    // Test version control comment
+    // Test version control comment 2
 
     // TODO: Load resource file for engine path, wad path and default selections instead of using defaults
     // TODO: Consider configurability for exe, wad and ipk
