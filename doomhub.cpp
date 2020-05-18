@@ -17,22 +17,26 @@ DoomHub::DoomHub(QWidget *parent)
 {
     ui->setupUi(this);
 
-    // Test version control comment 2
-
     // TODO: Load resource file for engine path, wad path and default selections instead of using defaults
-    // TODO: Consider configurability for exe, wad and ipk
-    // TODO: Though the below works, this is very slow now that you have changed things
 
-    const QString defaultParentPath = "C:\\ManualPrograms\\Doom";
-    ui->lineEditParentPath->setText(defaultParentPath);
+    // TODO: Make these something the user can edit
+    const QString enginePath{"C:\\ManualPrograms\\Doom\\Engines"};
+    const QString iWadPath{"C:\\ManualPrograms\\Doom\\Wads"};
+    const QString archivePath{"C:\\ManualPrograms\\Doom\\Wads"};
+    const QString customWadPath{"C:\\ManualPrograms\\Doom\\Wads"};
 
+    // Archives and custom wads are optional
     archivePathLookup["(None)"] = "";
-    wadPathLookup["(None)"] = "";
+    customWadPathLookup["(None)"] = "";
 
-    PopulateListWidget(*(ui->listWidgetEngines), enginePathLookup, defaultParentPath, { "exe" });
-    PopulateListWidget(*(ui->listWidgetArchives), archivePathLookup, defaultParentPath,
+    // TODO: Though the below works, this is slow now that you have changed things
+    PopulateListWidget(*(ui->listWidgetEngines), enginePathLookup, enginePath, { "exe" });
+    PopulateListWidget(*(ui->listWidgetIWads), iWadPathLookup, iWadPath, { "wad" });
+    PopulateListWidget(*(ui->listWidgetArchives), archivePathLookup, archivePath,
         { "pk3", "pk7", "pkz", "pke", "ipk3", "ipk7" });
-    PopulateListWidget(*(ui->listWidgetWads), wadPathLookup, defaultParentPath, { "wad" });
+    PopulateListWidget(*(ui->listWidgetCustomWads), customWadPathLookup, customWadPath, { "wad" });
+
+    BuildCommand();
 }
 
 DoomHub::~DoomHub()
@@ -68,38 +72,52 @@ void DoomHub::PopulateListWidget(QListWidget& listWidget, std::map<QString, QStr
 }
 
 void DoomHub::PlayDoom() {
+    Util::CreateProcessWrap("", ui->lineEditCommand->text().toStdString());
+}
+
+void DoomHub::BuildCommand() {
+    QString command;
+
+    // Engine
     const QList<QListWidgetItem*>& selectedEngines = ui->listWidgetEngines->selectedItems();
     if (!selectedEngines.empty()) {
-        std::string engineStr = enginePathLookup[(*selectedEngines.begin())->text()].toStdString();
-
-        std::string argStr;
-        const QList<QListWidgetItem*>& selectedArchives = ui->listWidgetArchives->selectedItems();
-        const QList<QListWidgetItem*>& selectedWads = ui->listWidgetWads->selectedItems();
-
-        if (!selectedArchives.empty()) {
-            argStr += archivePathLookup[(*selectedArchives.begin())->text()].toStdString();
-        }
-        if (!selectedWads.empty()) {
-            argStr += argStr.empty() ? "" : " ";
-            argStr += wadPathLookup[(*selectedWads.begin())->text()].toStdString();
-        }
-
-        // HACK, bigtime
-        argStr += " -iwad C:/ManualPrograms/Doom/Engines/PRBoom+/prboom-plus-2.5.1.4/doom2.wad";
-
-        std::cout << "engineStr=" << engineStr << std::endl << "argStr=" << argStr << std::endl;
-        Util::CreateProcessWrap(engineStr, argStr);
+        command += enginePathLookup[(*selectedEngines.begin())->text()];
     }
+
+    // Archive
+    const QList<QListWidgetItem*>& selectedArchives = ui->listWidgetArchives->selectedItems();
+    if (!selectedArchives.empty()) {
+        command += " " + archivePathLookup[(*selectedArchives.begin())->text()];
+    }
+
+    // WAD
+    const QList<QListWidgetItem*>& selectedCustomWads = ui->listWidgetCustomWads->selectedItems();
+    if (!selectedCustomWads.empty()) {
+        command += " " + customWadPathLookup[(*selectedCustomWads.begin())->text()];
+    }
+
+    // IWAD
+    const QList<QListWidgetItem*>& selectedIWads = ui->listWidgetIWads->selectedItems();
+    if (!selectedIWads.empty()) {
+        command += " -iwad " + iWadPathLookup[(*selectedIWads.begin())->text()];
+    }
+
+    ui->lineEditCommand->setText(command);
 }
 
-void DoomHub::on_listWidgetWads_itemDoubleClicked(QListWidgetItem* /*Unused*/) {
+void DoomHub::on_pushButtonRun_clicked() {
     PlayDoom();
 }
 
-void DoomHub::on_listWidgetArchives_itemDoubleClicked(QListWidgetItem* /*Unused*/) {
-    PlayDoom();
+void DoomHub::on_listWidgetEngines_itemSelectionChanged() {
+    BuildCommand();
 }
-
-void DoomHub::on_listWidgetEngines_itemDoubleClicked(QListWidgetItem* /*Unused*/) {
-    PlayDoom();
+void DoomHub::on_listWidgetIWads_itemSelectionChanged() {
+    BuildCommand();
+}
+void DoomHub::on_listWidgetArchives_itemSelectionChanged() {
+    BuildCommand();
+}
+void DoomHub::on_listWidgetCustomWads_itemSelectionChanged() {
+    BuildCommand();
 }

@@ -20,33 +20,34 @@ public:
 private:
     void ReadResourceFile();
     void WriteResourceFile();
+
+    // TODO: Why did you use static here before?  Revisit this later.
     static void PopulateListWidget(
             QListWidget& listWidget,
             std::map<QString, QString>& lookup,
             const QString& path,
             const QSet<QString>& extensions);
 
+    void BuildCommand();
     void PlayDoom();
 
 private slots:
-    // TODO: Try [[maybe_unused]] here?
-    void on_listWidgetWads_itemDoubleClicked(QListWidgetItem* /*Unused*/);
-    void on_listWidgetArchives_itemDoubleClicked(QListWidgetItem* /*Unused*/);
-    void on_listWidgetEngines_itemDoubleClicked(QListWidgetItem* /*Unused*/);
+    void on_pushButtonRun_clicked();
+
+    void on_listWidgetEngines_itemSelectionChanged();
+
+    void on_listWidgetIWads_itemSelectionChanged();
+
+    void on_listWidgetArchives_itemSelectionChanged();
+
+    void on_listWidgetCustomWads_itemSelectionChanged();
 
 private:
     Ui::DoomHub *ui;
 
-    // TODO: check this
-    QString engineDirPath;
-    QString engineSelection;
-    QString wadDirPath;
-    QString wadSelection;
-
     std::map<QString, QString> enginePathLookup;
+    std::map<QString, QString> iWadPathLookup;
     std::map<QString, QString> archivePathLookup;
-    std::map<QString, QString> wadPathLookup;
-
-    std::map<std::string, std::string> pathLookup;
+    std::map<QString, QString> customWadPathLookup;
 };
 #endif // DOOMHUB_H

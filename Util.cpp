@@ -15,7 +15,7 @@ void Util::CreateProcessWrap(const std::string& program, const std::string& args
 //        strcpy_s(argsCStr + 1, 512, args.c_str());
 //    }
 
-    const std::string dickHoleSurprise = program + (args.empty() ? "" : " ") + args;
+    const std::string dickHoleSurprise = program + (args.empty() || program.empty() ? "" : " ") + args;
     char argsCStr[512];
     strcpy_s(argsCStr, 512, dickHoleSurprise.c_str());
     std::cout << "argsCStr=" << argsCStr << std::endl << std::endl;
@@ -33,7 +33,7 @@ void Util::CreateProcessWrap(const std::string& program, const std::string& args
     (
         //program.c_str(),    // the path to executable
         NULL,
-        argsCStr,           // arguments
+        argsCStr,           // arguments, or full command
         NULL,               // Process handle not inheritable
         NULL,               // Thread handle not inheritable
         FALSE,              // Set handle inheritance to FALSE
