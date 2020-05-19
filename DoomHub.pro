@@ -29,7 +29,7 @@ FORMS += \
 
 # Allows use of experimental filesystem
 # TODO: Replace with boost filesystem until this is no longer experimental
-LIBS += -lstdc++fs
+# LIBS += -lstdc++fs
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

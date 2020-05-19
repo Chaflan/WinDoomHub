@@ -2,8 +2,12 @@
 #define DOOMHUB_H
 
 #include <QMainWindow>
-#include <map>
 #include "QListWidgetItem"
+#include <map>
+#include <set>
+#include <filesystem>
+
+namespace fs = std::filesystem;
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class DoomHub; }
@@ -24,9 +28,9 @@ private:
     // TODO: Why did you use static here before?  Revisit this later.
     static void PopulateListWidget(
             QListWidget& listWidget,
-            std::map<QString, QString>& lookup,
-            const QString& path,
-            const QSet<QString>& extensions);
+            std::map<QString, fs::path>& lookup,
+            const fs::path& path,
+            const std::set<std::string>& extensions);
 
     void BuildCommand();
     void PlayDoom();
@@ -45,9 +49,9 @@ private slots:
 private:
     Ui::DoomHub *ui;
 
-    std::map<QString, QString> enginePathLookup;
-    std::map<QString, QString> iWadPathLookup;
-    std::map<QString, QString> archivePathLookup;
-    std::map<QString, QString> customWadPathLookup;
+    std::map<QString, fs::path> enginePathLookup;
+    std::map<QString, fs::path> iWadPathLookup;
+    std::map<QString, fs::path> archivePathLookup;
+    std::map<QString, fs::path> customWadPathLookup;
 };
 #endif // DOOMHUB_H
