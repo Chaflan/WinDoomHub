@@ -18,14 +18,19 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += \
     Util.cpp \
     main.cpp \
-    doomhub.cpp
+    doomhub.cpp \
+    paths.cpp \
+    pathsdialog.cpp
 
 HEADERS += \
     Util.h \
-    doomhub.h
+    doomhub.h \
+    paths.h \
+    pathsdialog.h
 
 FORMS += \
-    doomhub.ui
+    doomhub.ui \
+    pathsdialog.ui
 
 # Allows use of experimental filesystem
 # TODO: Replace with boost filesystem until this is no longer experimental
@@ -36,5 +41,5 @@ qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
-DISTFILES += \
-    resources.xml
+RESOURCES += \
+    doomhub.qrc

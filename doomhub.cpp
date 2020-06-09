@@ -8,6 +8,11 @@
 #include "Util.h"
 #include "QDirIterator"
 #include <iostream>
+#include "pathsdialog.h"
+#include "qmessagebox.h"
+#include <QSettings>
+#include <algorithm>
+#include <QDebug>
 
 namespace fs = std::filesystem;
 
@@ -16,26 +21,8 @@ DoomHub::DoomHub(QWidget *parent)
     , ui(new Ui::DoomHub)
 {
     ui->setupUi(this);
-
-    // TODO: Load resource file for engine path, wad path and default selections instead of using defaults
-
-    // TODO: Make these something the user can edit
-    const fs::path enginePath{"C:\\ManualPrograms\\Doom\\Engines"};
-    const fs::path iWadPath{"C:\\ManualPrograms\\Doom\\Wads"};
-    const fs::path archivePath{"C:\\ManualPrograms\\Doom\\Wads"};
-    const fs::path customWadPath{"C:\\ManualPrograms\\Doom\\Wads"};
-
-    // Archives and custom wads are optional
-    archivePathLookup["(None)"] = "";
-    customWadPathLookup["(None)"] = "";
-
-    // TODO: Though the below works, this is slow now that you have changed things
-    PopulateListWidget(*(ui->listWidgetEngines), enginePathLookup, enginePath, { ".exe" });
-    PopulateListWidget(*(ui->listWidgetIWads), iWadPathLookup, iWadPath, { ".wad" });
-    PopulateListWidget(*(ui->listWidgetArchives), archivePathLookup, archivePath,
-        { ".pk3", ".pk7", ".pkz", ".pke", ".ipk3", ".ipk7" });
-    PopulateListWidget(*(ui->listWidgetCustomWads), customWadPathLookup, customWadPath, { ".wad" });
-
+    LoadSettings();
+    PopulateListWidgets();
     BuildCommand();
 }
 
@@ -45,10 +32,42 @@ DoomHub::~DoomHub()
     delete ui;
 }
 
+void DoomHub::LoadSettings() {
+    QSettings settings("settings.ini", QSettings::IniFormat);
+    paths.LoadSettings(settings);
+}
+
+void DoomHub::SaveSettings() {
+    QSettings settings("settings.ini", QSettings::IniFormat);
+    paths.SaveSettings(settings);
+}
+
+void DoomHub::PopulateListWidgets() {
+    enginePathLookup.clear();
+    iWadPathLookup.clear();
+    archivePathLookup.clear();
+    customWadPathLookup.clear();
+
+    // Archives and custom wads are optional
+    archivePathLookup["(None)"] = "";
+    customWadPathLookup["(None)"] = "";
+
+    // TODO: Though the below works, this is slow now that you have changed things
+    PopulateListWidget(*(ui->listWidgetEngines), enginePathLookup, paths.engine, { ".exe" });
+    PopulateListWidget(*(ui->listWidgetIWads), iWadPathLookup, paths.iwad, { ".wad" });
+    PopulateListWidget(*(ui->listWidgetArchives), archivePathLookup, paths.archive,
+        { ".pk3", ".pk7", ".pkz", ".pke", ".ipk3", ".ipk7" });
+    PopulateListWidget(*(ui->listWidgetCustomWads), customWadPathLookup, paths.wad, { ".wad" });
+}
+
 // TODO: Terrible lol, use a QTableView instead of a QListWidget to separate these
+// TODO: Split this into two methods, populate the map, populate the list widget
 void DoomHub::PopulateListWidget(QListWidget& listWidget, std::map<QString, fs::path>& lookup, const fs::path& path, const std::set<std::string>& extensions) {
 
-    for (const auto& e : fs::recursive_directory_iterator(path)) {
+    int i = 0;
+    const int maxIter = 1000;
+
+    for (const auto& e : fs::recursive_directory_iterator(path, fs::directory_options::skip_permission_denied)) {
         // TODO: Check performance by saving e.path() as a reference.
         if (extensions.find(e.path().extension().string()) != extensions.end()) {
             QString fileName = QString::fromStdString(e.path().filename().string());
@@ -62,8 +81,13 @@ void DoomHub::PopulateListWidget(QListWidget& listWidget, std::map<QString, fs::
                 fileName = trialFileName;
             }
         }
+
+        if (++i >= maxIter) {
+            break;
+        }
     }
 
+    listWidget.clear();
     for (const auto& [fileName, filePath] : lookup) {
         listWidget.addItem(fileName);
     }
@@ -118,4 +142,15 @@ void DoomHub::on_listWidgetArchives_itemSelectionChanged() {
 }
 void DoomHub::on_listWidgetCustomWads_itemSelectionChanged() {
     BuildCommand();
+}
+
+void DoomHub::on_actionPaths_triggered() {
+    PathsDialog p(paths);
+    p.setModal(true);
+    p.exec();
+
+    if (p.result() == QDialog::DialogCode::Accepted) {
+        PopulateListWidgets();
+        SaveSettings();
+    }
 }

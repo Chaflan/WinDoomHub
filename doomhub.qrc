@@ -1,2 +1,6 @@
-<!DOCTYPE RCC>
-<RCC version="1.0"/>
+<RCC>
+    <qresource prefix="/">
+        <file>resources/demon_icon.png</file>
+        <file>resources/path_icon.png</file>
+    </qresource>
+</RCC>

@@ -6,6 +6,7 @@
 #include <map>
 #include <set>
 #include <filesystem>
+#include "paths.h"
 
 namespace fs = std::filesystem;
 
@@ -25,6 +26,11 @@ private:
     void ReadResourceFile();
     void WriteResourceFile();
 
+    void LoadSettings();
+    void SaveSettings();
+
+    void PopulateListWidgets();
+
     // TODO: Why did you use static here before?  Revisit this later.
     static void PopulateListWidget(
             QListWidget& listWidget,
@@ -37,18 +43,17 @@ private:
 
 private slots:
     void on_pushButtonRun_clicked();
-
     void on_listWidgetEngines_itemSelectionChanged();
-
     void on_listWidgetIWads_itemSelectionChanged();
-
     void on_listWidgetArchives_itemSelectionChanged();
-
     void on_listWidgetCustomWads_itemSelectionChanged();
+
+    void on_actionPaths_triggered();
 
 private:
     Ui::DoomHub *ui;
 
+    Paths paths;
     std::map<QString, fs::path> enginePathLookup;
     std::map<QString, fs::path> iWadPathLookup;
     std::map<QString, fs::path> archivePathLookup;

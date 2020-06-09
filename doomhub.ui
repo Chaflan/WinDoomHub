@@ -93,9 +93,33 @@
      <height>20</height>
     </rect>
    </property>
+   <widget class="QMenu" name="menuSettings">
+    <property name="title">
+     <string>Settings</string>
+    </property>
+    <addaction name="actionPaths"/>
+   </widget>
+   <addaction name="menuSettings"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
+  <action name="actionPaths">
+   <property name="icon">
+    <iconset resource="doomhub.qrc">
+     <normaloff>:/resources/path_icon.png</normaloff>:/resources/path_icon.png</iconset>
+   </property>
+   <property name="text">
+    <string>Paths</string>
+   </property>
+   <property name="toolTip">
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Set paths to Engines, WADs, etc.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+O</string>
+   </property>
+  </action>
  </widget>
- <resources/>
+ <resources>
+  <include location="doomhub.qrc"/>
+ </resources>
  <connections/>
 </ui>
