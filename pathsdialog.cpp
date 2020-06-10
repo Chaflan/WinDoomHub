@@ -14,6 +14,7 @@ PathsDialog::PathsDialog(Paths& p, QWidget *parent) :
 
 PathsDialog::~PathsDialog()
 {
+    // TODO: unique_ptr?
     delete ui;
 }
 

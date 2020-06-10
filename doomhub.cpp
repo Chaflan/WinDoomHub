@@ -60,31 +60,36 @@ void DoomHub::PopulateListWidgets() {
     PopulateListWidget(*(ui->listWidgetCustomWads), customWadPathLookup, paths.wad, { ".wad" });
 }
 
-// TODO: Terrible lol, use a QTableView instead of a QListWidget to separate these
 // TODO: Split this into two methods, populate the map, populate the list widget
 void DoomHub::PopulateListWidget(QListWidget& listWidget, std::map<QString, fs::path>& lookup, const fs::path& path, const std::set<std::string>& extensions) {
+
+    std::set<QString> collisionNames;
 
     int i = 0;
     const int maxIter = 1000;
 
+    // Iterate through directories and subdirectories and map filename -> path.  Upon collision, map "filename (parent path)" -> path, and store
+    // the collision name so that we can go back and change its mapping to "filename (parent path)" -> path too.  We don't do it now or we wouldn't
+    // know about future collisions with that name.
     for (const auto& e : fs::recursive_directory_iterator(path, fs::directory_options::skip_permission_denied)) {
-        // TODO: Check performance by saving e.path() as a reference.
         if (extensions.find(e.path().extension().string()) != extensions.end()) {
             QString fileName = QString::fromStdString(e.path().filename().string());
             if (!lookup.emplace(fileName, e.path()).second) {
-                int i = 0;
-                QString trialFileName;
-                do {
-                    ++i;
-                    trialFileName = fileName + " (copy " + QVariant(i).toString() + ") ";
-                } while (!lookup.emplace(trialFileName, e.path()).second);
-                fileName = trialFileName;
+                QString newFileName = fileName + " (" + QString::fromStdString(e.path().parent_path().string()) + ")";
+                lookup.emplace(std::move(newFileName), e.path());
+                collisionNames.emplace(std::move(fileName));
             }
         }
 
         if (++i >= maxIter) {
             break;
         }
+    }
+
+    for (const auto& name : collisionNames) {
+        auto nodeHandle = lookup.extract(name);
+        nodeHandle.key() = name + " (" + QString::fromStdString(path.parent_path().string()) + ")";
+        lookup.insert(std::move(nodeHandle));
     }
 
     listWidget.clear();

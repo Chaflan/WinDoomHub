@@ -21,11 +21,8 @@ public Q_SLOTS:
 
 private slots:
     void on_pushButtonEngine_clicked();
-
     void on_pushButtonIwad_clicked();
-
     void on_pushButtonArchive_clicked();
-
     void on_pushButtonWad_clicked();
 
 private:
