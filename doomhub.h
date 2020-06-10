@@ -23,11 +23,15 @@ public:
     ~DoomHub();
 
 private:
+    // TODO: Consts
     void ReadResourceFile();
     void WriteResourceFile();
 
-    void LoadSettings();
-    void SaveSettings();
+    void LoadPathSettings();
+    void LoadSelectionSettings();
+    void SavePathSettings();
+    void SaveSelectionSettings();
+    QSettings GetSettings();
 
     void PopulateListWidgets();
 

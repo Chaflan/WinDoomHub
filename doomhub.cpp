@@ -21,8 +21,9 @@ DoomHub::DoomHub(QWidget *parent)
     , ui(new Ui::DoomHub)
 {
     ui->setupUi(this);
-    LoadSettings();
+    LoadPathSettings();
     PopulateListWidgets();
+    LoadSelectionSettings();
     BuildCommand();
 }
 
@@ -32,14 +33,54 @@ DoomHub::~DoomHub()
     delete ui;
 }
 
-void DoomHub::LoadSettings() {
-    QSettings settings("settings.ini", QSettings::IniFormat);
+void DoomHub::LoadPathSettings() {
+    QSettings settings = GetSettings();
     paths.LoadSettings(settings);
 }
 
-void DoomHub::SaveSettings() {
-    QSettings settings("settings.ini", QSettings::IniFormat);
+void DoomHub::LoadSelectionSettings() {
+    QSettings settings = GetSettings();
+
+    // TODO: more of these for repeat stuff?
+    auto selectWithString = [&settings = std::as_const(settings)] (const QString& s, QListWidget& lw) {
+        QString desiredSelection = settings.value(s).toString();
+        const auto& listWidgetList = lw.findItems(desiredSelection, Qt::MatchFlag::MatchExactly);
+        if (!listWidgetList.empty()) {
+            lw.setCurrentItem(listWidgetList.first());
+        }
+    };
+
+    selectWithString("Selections/engines", *(ui->listWidgetEngines));
+    selectWithString("Selections/iwads", *(ui->listWidgetIWads));
+    selectWithString("Selections/archives", *(ui->listWidgetArchives));
+    selectWithString("Selections/wads", *(ui->listWidgetCustomWads));
+}
+
+void DoomHub::SavePathSettings() {
+    QSettings settings = GetSettings();
     paths.SaveSettings(settings);
+}
+
+void DoomHub::SaveSelectionSettings() {
+
+    // TODO: Refactor custom wads here and the other place
+    const QList<QListWidgetItem*>& selectedEngines = ui->listWidgetEngines->selectedItems();
+    const QList<QListWidgetItem*>& selectedIWads = ui->listWidgetIWads->selectedItems();
+    const QList<QListWidgetItem*>& selectedArchives = ui->listWidgetArchives->selectedItems();
+    const QList<QListWidgetItem*>& selectedCustomWads = ui->listWidgetCustomWads->selectedItems();
+
+    // TODO: Use setValue / instead of beginGroup?
+    QSettings settings = GetSettings();
+    settings.beginGroup("Selections");
+    settings.setValue("engines", selectedEngines.empty() ? "" : (*selectedEngines.begin())->text());
+    settings.setValue("iwads", selectedIWads.empty() ? "" : (*selectedIWads.begin())->text());
+    settings.setValue("archives", selectedArchives.empty() ? "" : (*selectedArchives.begin())->text());
+    settings.setValue("wads", selectedCustomWads.empty() ? "" : (*selectedCustomWads.begin())->text());
+    settings.endGroup();
+}
+
+QSettings DoomHub::GetSettings() {
+    return QSettings("settings.ini", QSettings::IniFormat);
 }
 
 void DoomHub::PopulateListWidgets() {
@@ -133,6 +174,7 @@ void DoomHub::BuildCommand() {
 }
 
 void DoomHub::on_pushButtonRun_clicked() {
+    SaveSelectionSettings();
     PlayDoom();
 }
 
@@ -156,6 +198,6 @@ void DoomHub::on_actionPaths_triggered() {
 
     if (p.result() == QDialog::DialogCode::Accepted) {
         PopulateListWidgets();
-        SaveSettings();
+        SavePathSettings();
     }
 }
