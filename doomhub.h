@@ -24,9 +24,6 @@ public:
 
 private:
     // TODO: Consts
-    void ReadResourceFile();
-    void WriteResourceFile();
-
     void LoadPathSettings();
     void LoadSelectionSettings();
     void SavePathSettings();

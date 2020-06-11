@@ -29,7 +29,6 @@ DoomHub::DoomHub(QWidget *parent)
 
 DoomHub::~DoomHub()
 {
-    // TODO: Unique ptr?
     delete ui;
 }
 
@@ -41,7 +40,6 @@ void DoomHub::LoadPathSettings() {
 void DoomHub::LoadSelectionSettings() {
     QSettings settings = GetSettings();
 
-    // TODO: more of these for repeat stuff?
     auto selectWithString = [&settings = std::as_const(settings)] (const QString& s, QListWidget& lw) {
         QString desiredSelection = settings.value(s).toString();
         const auto& listWidgetList = lw.findItems(desiredSelection, Qt::MatchFlag::MatchExactly);
@@ -62,21 +60,16 @@ void DoomHub::SavePathSettings() {
 }
 
 void DoomHub::SaveSelectionSettings() {
-
-    // TODO: Refactor custom wads here and the other place
     const QList<QListWidgetItem*>& selectedEngines = ui->listWidgetEngines->selectedItems();
     const QList<QListWidgetItem*>& selectedIWads = ui->listWidgetIWads->selectedItems();
     const QList<QListWidgetItem*>& selectedArchives = ui->listWidgetArchives->selectedItems();
     const QList<QListWidgetItem*>& selectedCustomWads = ui->listWidgetCustomWads->selectedItems();
 
-    // TODO: Use setValue / instead of beginGroup?
     QSettings settings = GetSettings();
-    settings.beginGroup("Selections");
-    settings.setValue("engines", selectedEngines.empty() ? "" : (*selectedEngines.begin())->text());
-    settings.setValue("iwads", selectedIWads.empty() ? "" : (*selectedIWads.begin())->text());
-    settings.setValue("archives", selectedArchives.empty() ? "" : (*selectedArchives.begin())->text());
-    settings.setValue("wads", selectedCustomWads.empty() ? "" : (*selectedCustomWads.begin())->text());
-    settings.endGroup();
+    settings.setValue("Selections/engines", selectedEngines.empty() ? "" : (*selectedEngines.begin())->text());
+    settings.setValue("Selections/iwads", selectedIWads.empty() ? "" : (*selectedIWads.begin())->text());
+    settings.setValue("Selections/archives", selectedArchives.empty() ? "" : (*selectedArchives.begin())->text());
+    settings.setValue("Selections/wads", selectedCustomWads.empty() ? "" : (*selectedCustomWads.begin())->text());
 }
 
 QSettings DoomHub::GetSettings() {
@@ -94,16 +87,17 @@ void DoomHub::PopulateListWidgets() {
     customWadPathLookup["(None)"] = "";
 
     // TODO: Though the below works, this is slow now that you have changed things
-    PopulateListWidget(*(ui->listWidgetEngines), enginePathLookup, paths.engine, { ".exe" });
-    PopulateListWidget(*(ui->listWidgetIWads), iWadPathLookup, paths.iwad, { ".wad" });
-    PopulateListWidget(*(ui->listWidgetArchives), archivePathLookup, paths.archive,
+    PopulateListWidget(*(ui->listWidgetEngines), enginePathLookup, paths.engines, { ".exe" });
+    PopulateListWidget(*(ui->listWidgetIWads), iWadPathLookup, paths.iWads, { ".wad" });
+    PopulateListWidget(*(ui->listWidgetArchives), archivePathLookup, paths.archives,
         { ".pk3", ".pk7", ".pkz", ".pke", ".ipk3", ".ipk7" });
-    PopulateListWidget(*(ui->listWidgetCustomWads), customWadPathLookup, paths.wad, { ".wad" });
+    PopulateListWidget(*(ui->listWidgetCustomWads), customWadPathLookup, paths.customWads, { ".wad" });
 }
 
 // TODO: Split this into two methods, populate the map, populate the list widget
 void DoomHub::PopulateListWidget(QListWidget& listWidget, std::map<QString, fs::path>& lookup, const fs::path& path, const std::set<std::string>& extensions) {
 
+    // TODO: Vector?  You don't really need the set functionality for this
     std::set<QString> collisionNames;
 
     int i = 0;
@@ -146,29 +140,20 @@ void DoomHub::PlayDoom() {
 void DoomHub::BuildCommand() {
     std::string command;
 
-    // Engine
-    const QList<QListWidgetItem*>& selectedEngines = ui->listWidgetEngines->selectedItems();
-    if (!selectedEngines.empty()) {
-        command += enginePathLookup[(*selectedEngines.begin())->text()].string();
-    }
+    // TODO: string_view?
+    auto AddToCommandString = [&command](
+            const std::string& prefix,
+            const QListWidget& lw,
+            const std::map<QString, fs::path>& lookup){
+        if (!lw.selectedItems().empty()) {
+            command += prefix + lookup.at(lw.selectedItems().first()->text()).string();
+        }
+    };
 
-    // Archive
-    const QList<QListWidgetItem*>& selectedArchives = ui->listWidgetArchives->selectedItems();
-    if (!selectedArchives.empty()) {
-        command += " " + archivePathLookup[(*selectedArchives.begin())->text()].string();
-    }
-
-    // WAD
-    const QList<QListWidgetItem*>& selectedCustomWads = ui->listWidgetCustomWads->selectedItems();
-    if (!selectedCustomWads.empty()) {
-        command += " " + customWadPathLookup[(*selectedCustomWads.begin())->text()].string();
-    }
-
-    // IWAD
-    const QList<QListWidgetItem*>& selectedIWads = ui->listWidgetIWads->selectedItems();
-    if (!selectedIWads.empty()) {
-        command += " -iwad " + iWadPathLookup[(*selectedIWads.begin())->text()].string();
-    }
+    AddToCommandString("", (*ui->listWidgetEngines), enginePathLookup);
+    AddToCommandString(" ", (*ui->listWidgetArchives), archivePathLookup);
+    AddToCommandString(" ", (*ui->listWidgetCustomWads), customWadPathLookup);
+    AddToCommandString(" -wad ", (*ui->listWidgetIWads), iWadPathLookup);
 
     ui->lineEditCommand->setText(QString::fromStdString(command));
 }

@@ -14,7 +14,6 @@ PathsDialog::PathsDialog(Paths& p, QWidget *parent) :
 
 PathsDialog::~PathsDialog()
 {
-    // TODO: unique_ptr?
     delete ui;
 }
 
@@ -25,48 +24,48 @@ void PathsDialog::accept() {
 
 void PathsDialog::LoadPaths()
 {
-    ui->lineEditEngine->setText(QString::fromStdString(paths.engine.string()));
-    ui->lineEditIwad->setText(QString::fromStdString(paths.iwad.string()));
-    ui->lineEditArchive->setText(QString::fromStdString(paths.archive.string()));
-    ui->lineEditWad->setText(QString::fromStdString(paths.wad.string()));
+    ui->lineEditEngine->setText(QString::fromStdString(paths.engines.string()));
+    ui->lineEditIWad->setText(QString::fromStdString(paths.iWads.string()));
+    ui->lineEditArchive->setText(QString::fromStdString(paths.archives.string()));
+    ui->lineEditCustomWad->setText(QString::fromStdString(paths.customWads.string()));
 }
 
 void PathsDialog::SavePaths()
 {
-    paths.engine = ui->lineEditEngine->text().toStdString();
-    paths.iwad = ui->lineEditIwad->text().toStdString();
-    paths.archive = ui->lineEditArchive->text().toStdString();
-    paths.wad = ui->lineEditWad->text().toStdString();
+    paths.engines = ui->lineEditEngine->text().toStdString();
+    paths.iWads = ui->lineEditIWad->text().toStdString();
+    paths.archives = ui->lineEditArchive->text().toStdString();
+    paths.customWads = ui->lineEditCustomWad->text().toStdString();
 }
 
 void PathsDialog::on_pushButtonEngine_clicked()
 {
-    paths.engine = QFileDialog::getExistingDirectory(this, "Select Directory Containing Doom Engines", ui->lineEditEngine->text()).toStdString();
-    if (!paths.engine.empty()) {
-        ui->lineEditEngine->setText(QString::fromStdString(paths.engine.string()));
+    paths.engines = QFileDialog::getExistingDirectory(this, "Select Directory Containing Doom Engines", ui->lineEditEngine->text()).toStdString();
+    if (!paths.engines.empty()) {
+        ui->lineEditEngine->setText(QString::fromStdString(paths.engines.string()));
     }
 }
 
-void PathsDialog::on_pushButtonIwad_clicked()
+void PathsDialog::on_pushButtonIWad_clicked()
 {
-    paths.iwad = QFileDialog::getExistingDirectory(this, "Select Directory Containing Doom IWADs", ui->lineEditIwad->text()).toStdString();
-    if (!paths.iwad.empty()) {
-        ui->lineEditIwad->setText(QString::fromStdString(paths.iwad.string()));
+    paths.iWads = QFileDialog::getExistingDirectory(this, "Select Directory Containing Doom IWADs", ui->lineEditIWad->text()).toStdString();
+    if (!paths.iWads.empty()) {
+        ui->lineEditIWad->setText(QString::fromStdString(paths.iWads.string()));
     }
 }
 
 void PathsDialog::on_pushButtonArchive_clicked()
 {
-    paths.archive = QFileDialog::getExistingDirectory(this, "Select Directory Containing Doom Archives", ui->lineEditArchive->text()).toStdString();
-    if (!paths.archive.empty()) {
-        ui->lineEditArchive->setText(QString::fromStdString(paths.archive.string()));
+    paths.archives = QFileDialog::getExistingDirectory(this, "Select Directory Containing Doom Archives", ui->lineEditArchive->text()).toStdString();
+    if (!paths.archives.empty()) {
+        ui->lineEditArchive->setText(QString::fromStdString(paths.archives.string()));
     }
 }
 
-void PathsDialog::on_pushButtonWad_clicked()
+void PathsDialog::on_pushButtonCustomWad_clicked()
 {
-    paths.wad = QFileDialog::getExistingDirectory(this, "Select Directory Containing Doom WADs", ui->lineEditWad->text()).toStdString();
-    if (!paths.wad.empty()) {
-        ui->lineEditWad->setText(QString::fromStdString(paths.wad.string()));
+    paths.customWads = QFileDialog::getExistingDirectory(this, "Select Directory Containing Doom WADs", ui->lineEditCustomWad->text()).toStdString();
+    if (!paths.customWads.empty()) {
+        ui->lineEditCustomWad->setText(QString::fromStdString(paths.customWads.string()));
     }
 }
