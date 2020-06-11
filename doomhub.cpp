@@ -32,6 +32,10 @@ DoomHub::~DoomHub()
     delete ui;
 }
 
+QSettings DoomHub::GetSettings() {
+    return QSettings("settings.ini", QSettings::IniFormat);
+}
+
 void DoomHub::LoadPathSettings() {
     QSettings settings = GetSettings();
     paths.LoadSettings(settings);
@@ -40,18 +44,19 @@ void DoomHub::LoadPathSettings() {
 void DoomHub::LoadSelectionSettings() {
     QSettings settings = GetSettings();
 
-    auto selectWithString = [&settings = std::as_const(settings)] (const QString& s, QListWidget& lw) {
-        QString desiredSelection = settings.value(s).toString();
+    // Get the value associated with the key from settings.ini.  Select this value from the lw.
+    auto selectWithSetting = [&settings = std::as_const(settings)] (const QString& settingKey, QListWidget& lw) {
+        QString desiredSelection = settings.value(settingKey).toString();
         const auto& listWidgetList = lw.findItems(desiredSelection, Qt::MatchFlag::MatchExactly);
         if (!listWidgetList.empty()) {
             lw.setCurrentItem(listWidgetList.first());
         }
     };
 
-    selectWithString("Selections/engines", *(ui->listWidgetEngines));
-    selectWithString("Selections/iwads", *(ui->listWidgetIWads));
-    selectWithString("Selections/archives", *(ui->listWidgetArchives));
-    selectWithString("Selections/wads", *(ui->listWidgetCustomWads));
+    selectWithSetting("Selections/engines", *(ui->listWidgetEngines));
+    selectWithSetting("Selections/iwads", *(ui->listWidgetIWads));
+    selectWithSetting("Selections/archives", *(ui->listWidgetArchives));
+    selectWithSetting("Selections/wads", *(ui->listWidgetCustomWads));
 }
 
 void DoomHub::SavePathSettings() {
@@ -72,47 +77,49 @@ void DoomHub::SaveSelectionSettings() {
     settings.setValue("Selections/wads", selectedCustomWads.empty() ? "" : (*selectedCustomWads.begin())->text());
 }
 
-QSettings DoomHub::GetSettings() {
-    return QSettings("settings.ini", QSettings::IniFormat);
-}
-
 void DoomHub::PopulateListWidgets() {
-    enginePathLookup.clear();
-    iWadPathLookup.clear();
-    archivePathLookup.clear();
-    customWadPathLookup.clear();
+
+    PopulateLookup(enginePathLookup, paths.engines, { ".exe" });
+    PopulateLookup(iWadPathLookup, paths.iWads, { ".wad" });
+    PopulateLookup(archivePathLookup, paths.archives, { ".pk3", ".pk7", ".pkz", ".pke", ".ipk3", ".ipk7" });
+    PopulateLookup(customWadPathLookup, paths.customWads, { ".wad" });
 
     // Archives and custom wads are optional
     archivePathLookup["(None)"] = "";
     customWadPathLookup["(None)"] = "";
 
-    // TODO: Though the below works, this is slow now that you have changed things
-    PopulateListWidget(*(ui->listWidgetEngines), enginePathLookup, paths.engines, { ".exe" });
-    PopulateListWidget(*(ui->listWidgetIWads), iWadPathLookup, paths.iWads, { ".wad" });
-    PopulateListWidget(*(ui->listWidgetArchives), archivePathLookup, paths.archives,
-        { ".pk3", ".pk7", ".pkz", ".pke", ".ipk3", ".ipk7" });
-    PopulateListWidget(*(ui->listWidgetCustomWads), customWadPathLookup, paths.customWads, { ".wad" });
+    // Populate lw with the keys of the lookup
+    auto PopulateListWidget = [](QListWidget& lw, const std::map<QString, fs::path>& lookup){
+        lw.clear();
+        for (const auto& [fileName, filePath] : lookup) {
+            lw.addItem(fileName);
+        }
+    };
+
+    PopulateListWidget(*(ui->listWidgetEngines), enginePathLookup);
+    PopulateListWidget(*(ui->listWidgetIWads), iWadPathLookup);
+    PopulateListWidget(*(ui->listWidgetArchives), archivePathLookup);
+    PopulateListWidget(*(ui->listWidgetCustomWads), customWadPathLookup);
 }
 
-// TODO: Split this into two methods, populate the map, populate the list widget
-void DoomHub::PopulateListWidget(QListWidget& listWidget, std::map<QString, fs::path>& lookup, const fs::path& path, const std::set<std::string>& extensions) {
-
-    // TODO: Vector?  You don't really need the set functionality for this
-    std::set<QString> collisionNames;
+void DoomHub::PopulateLookup(std::map<QString, fs::path>& lookup, const fs::path& path, const std::set<std::string>& extensions) {
+    lookup.clear();
 
     int i = 0;
     const int maxIter = 1000;
+    std::vector<QString> collisionNames;
 
-    // Iterate through directories and subdirectories and map filename -> path.  Upon collision, map "filename (parent path)" -> path, and store
-    // the collision name so that we can go back and change its mapping to "filename (parent path)" -> path too.  We don't do it now or we wouldn't
-    // know about future collisions with that name.
+    // Iterate through directories and subdirectories and map filename -> path.
+    // Upon collision, map "filename (parent path)" -> path, and store
+    // the collision name so that we can go back and change its mapping to "filename (parent path)" -> path too.
+    // We don't do it now or we wouldn't know about future collisions with that name.
     for (const auto& e : fs::recursive_directory_iterator(path, fs::directory_options::skip_permission_denied)) {
         if (extensions.find(e.path().extension().string()) != extensions.end()) {
             QString fileName = QString::fromStdString(e.path().filename().string());
             if (!lookup.emplace(fileName, e.path()).second) {
                 QString newFileName = fileName + " (" + QString::fromStdString(e.path().parent_path().string()) + ")";
                 lookup.emplace(std::move(newFileName), e.path());
-                collisionNames.emplace(std::move(fileName));
+                collisionNames.emplace_back(std::move(fileName));
             }
         }
 
@@ -121,15 +128,11 @@ void DoomHub::PopulateListWidget(QListWidget& listWidget, std::map<QString, fs::
         }
     }
 
+    // Fix collision names
     for (const auto& name : collisionNames) {
         auto nodeHandle = lookup.extract(name);
         nodeHandle.key() = name + " (" + QString::fromStdString(path.parent_path().string()) + ")";
         lookup.insert(std::move(nodeHandle));
-    }
-
-    listWidget.clear();
-    for (const auto& [fileName, filePath] : lookup) {
-        listWidget.addItem(fileName);
     }
 }
 

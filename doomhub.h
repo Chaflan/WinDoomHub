@@ -24,17 +24,15 @@ public:
 
 private:
     // TODO: Consts
+
+    QSettings GetSettings();
     void LoadPathSettings();
     void LoadSelectionSettings();
     void SavePathSettings();
     void SaveSelectionSettings();
-    QSettings GetSettings();
 
     void PopulateListWidgets();
-
-    // TODO: Why did you use static here before?  Revisit this later.
-    static void PopulateListWidget(
-            QListWidget& listWidget,
+    static void PopulateLookup(
             std::map<QString, fs::path>& lookup,
             const fs::path& path,
             const std::set<std::string>& extensions);
