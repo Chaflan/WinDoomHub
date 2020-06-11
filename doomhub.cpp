@@ -32,7 +32,7 @@ DoomHub::~DoomHub()
     delete ui;
 }
 
-QSettings DoomHub::GetSettings() {
+QSettings DoomHub::GetSettings() const {
     return QSettings("settings.ini", QSettings::IniFormat);
 }
 
@@ -59,12 +59,12 @@ void DoomHub::LoadSelectionSettings() {
     selectWithSetting("Selections/wads", *(ui->listWidgetCustomWads));
 }
 
-void DoomHub::SavePathSettings() {
+void DoomHub::SavePathSettings() const {
     QSettings settings = GetSettings();
     paths.SaveSettings(settings);
 }
 
-void DoomHub::SaveSelectionSettings() {
+void DoomHub::SaveSelectionSettings() const {
     const QList<QListWidgetItem*>& selectedEngines = ui->listWidgetEngines->selectedItems();
     const QList<QListWidgetItem*>& selectedIWads = ui->listWidgetIWads->selectedItems();
     const QList<QListWidgetItem*>& selectedArchives = ui->listWidgetArchives->selectedItems();
@@ -136,10 +136,6 @@ void DoomHub::PopulateLookup(std::map<QString, fs::path>& lookup, const fs::path
     }
 }
 
-void DoomHub::PlayDoom() {
-    Util::CreateProcessWrap("", ui->lineEditCommand->text().toStdString());
-}
-
 void DoomHub::BuildCommand() {
     std::string command;
 
@@ -159,6 +155,10 @@ void DoomHub::BuildCommand() {
     AddToCommandString(" -wad ", (*ui->listWidgetIWads), iWadPathLookup);
 
     ui->lineEditCommand->setText(QString::fromStdString(command));
+}
+
+void DoomHub::PlayDoom() const {
+    Util::ExecuteCommandLine(ui->lineEditCommand->text().toStdString());
 }
 
 void DoomHub::on_pushButtonRun_clicked() {

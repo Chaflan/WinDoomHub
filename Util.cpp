@@ -1,24 +1,11 @@
 #include "Util.h"
 #include <windows.h>
 
-// TODO: Remove
-#include <iostream>
-
-void Util::CreateProcessWrap(const std::string& program, const std::string& args)
+void Util::ExecuteCommandLine(const std::string& command)
 {
-    // Arguments need to be char* (not const char*) and with a preceeding space
-//    char argsCStr[512];
-//    if (args.empty()) {
-//        strcpy_s(argsCStr, 512, args.c_str());
-//    } else {
-//        argsCStr[0] = ' ';
-//        strcpy_s(argsCStr + 1, 512, args.c_str());
-//    }
-
-    const std::string dickHoleSurprise = program + (args.empty() || program.empty() ? "" : " ") + args;
-    char argsCStr[512];
-    strcpy_s(argsCStr, 512, dickHoleSurprise.c_str());
-    std::cout << "argsCStr=" << argsCStr << std::endl << std::endl;
+    // We need to convert to non-const for CreateProcessA
+    char argsCStr[2048];
+    strcpy_s(argsCStr, 2048, command.c_str());
 
     STARTUPINFOA si;
     PROCESS_INFORMATION pi;
@@ -31,8 +18,7 @@ void Util::CreateProcessWrap(const std::string& program, const std::string& args
     // start the program up
     CreateProcessA
     (
-        //program.c_str(),    // the path to executable
-        NULL,
+        NULL,               // the path to executable
         argsCStr,           // arguments, or full command
         NULL,               // Process handle not inheritable
         NULL,               // Thread handle not inheritable

@@ -25,11 +25,11 @@ public:
 private:
     // TODO: Consts
 
-    QSettings GetSettings();
+    QSettings GetSettings() const;
     void LoadPathSettings();
     void LoadSelectionSettings();
-    void SavePathSettings();
-    void SaveSelectionSettings();
+    void SavePathSettings() const;
+    void SaveSelectionSettings() const;
 
     void PopulateListWidgets();
     static void PopulateLookup(
@@ -38,7 +38,7 @@ private:
             const std::set<std::string>& extensions);
 
     void BuildCommand();
-    void PlayDoom();
+    void PlayDoom() const;
 
 private slots:
     void on_pushButtonRun_clicked();

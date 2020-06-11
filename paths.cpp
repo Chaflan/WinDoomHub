@@ -8,7 +8,7 @@ void Paths::LoadSettings(const QSettings& settings) {
     customWads = settings.value("Paths/wads", QDir::rootPath()).toString().toStdString();
 }
 
-void Paths::SaveSettings(QSettings& settings) {
+void Paths::SaveSettings(QSettings& settings) const {
     settings.setValue("Paths/engines", QString::fromStdString(engines.string()));
     settings.setValue("Paths/iwads", QString::fromStdString(iWads.string()));
     settings.setValue("Paths/archives", QString::fromStdString(archives.string()));

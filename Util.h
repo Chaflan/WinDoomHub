@@ -5,7 +5,7 @@
 
 namespace Util
 {
-    void CreateProcessWrap(const std::string& program, const std::string& args);
+    void ExecuteCommandLine(const std::string& command);
 }
 
 #endif // UTIL_H
