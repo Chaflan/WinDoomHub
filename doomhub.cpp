@@ -107,7 +107,7 @@ void DoomHub::PopulateLookup(std::map<QString, fs::path>& lookup, const fs::path
 
     int i = 0;
     const int maxIter = 1000;
-    std::vector<QString> collisionNames;
+    std::set<QString> collisionNames;
 
     // Iterate through directories and subdirectories and map filename -> path.
     // Upon collision, map "filename (parent path)" -> path, and store
@@ -117,9 +117,9 @@ void DoomHub::PopulateLookup(std::map<QString, fs::path>& lookup, const fs::path
         if (extensions.find(e.path().extension().string()) != extensions.end()) {
             QString fileName = QString::fromStdString(e.path().filename().string());
             if (!lookup.emplace(fileName, e.path()).second) {
-                QString newFileName = fileName + " (" + QString::fromStdString(e.path().parent_path().string()) + ")";
+                QString newFileName = fileName + " (" + QString::fromStdString(e.path().parent_path().lexically_normal().string()) + ")";
                 lookup.emplace(std::move(newFileName), e.path());
-                collisionNames.emplace_back(std::move(fileName));
+                collisionNames.emplace(std::move(fileName));
             }
         }
 
@@ -131,7 +131,7 @@ void DoomHub::PopulateLookup(std::map<QString, fs::path>& lookup, const fs::path
     // Fix collision names
     for (const auto& name : collisionNames) {
         auto nodeHandle = lookup.extract(name);
-        nodeHandle.key() = name + " (" + QString::fromStdString(path.parent_path().string()) + ")";
+        nodeHandle.key() = name + " (" + QString::fromStdString(nodeHandle.mapped().parent_path().lexically_normal().string()) + ")";
         lookup.insert(std::move(nodeHandle));
     }
 }
@@ -145,7 +145,7 @@ void DoomHub::BuildCommand() {
             const QListWidget& lw,
             const std::map<QString, fs::path>& lookup){
         if (!lw.selectedItems().empty()) {
-            command += prefix + lookup.at(lw.selectedItems().first()->text()).string();
+            command += prefix + lookup.at(lw.selectedItems().first()->text()).lexically_normal().string();
         }
     };
 
@@ -154,11 +154,11 @@ void DoomHub::BuildCommand() {
     AddToCommandString(" ", (*ui->listWidgetCustomWads), customWadPathLookup);
     AddToCommandString(" -wad ", (*ui->listWidgetIWads), iWadPathLookup);
 
-    ui->lineEditCommand->setText(QString::fromStdString(command));
+    ui->plainTextEditCommand->setPlainText(QString::fromStdString(command));
 }
 
 void DoomHub::PlayDoom() const {
-    Util::ExecuteCommandLine(ui->lineEditCommand->text().toStdString());
+    Util::ExecuteCommandLine(ui->plainTextEditCommand->toPlainText().toStdString());
 }
 
 void DoomHub::on_pushButtonRun_clicked() {
@@ -167,6 +167,7 @@ void DoomHub::on_pushButtonRun_clicked() {
 }
 
 void DoomHub::on_listWidgetEngines_itemSelectionChanged() {
+    // TODO: Make sure you can't select more than one
     BuildCommand();
 }
 void DoomHub::on_listWidgetIWads_itemSelectionChanged() {
@@ -185,6 +186,18 @@ void DoomHub::on_actionPaths_triggered() {
     p.exec();
 
     if (p.result() == QDialog::DialogCode::Accepted) {
+
+        auto UnselectAllFromWidget = [](QListWidget& lw){
+            for (const auto& item : lw.selectedItems()) {
+                lw.setItemSelected(item, false);
+            }
+        };
+
+        UnselectAllFromWidget(*(ui->listWidgetEngines));
+        UnselectAllFromWidget(*(ui->listWidgetIWads));
+        UnselectAllFromWidget(*(ui->listWidgetArchives));
+        UnselectAllFromWidget(*(ui->listWidgetCustomWads));
+
         PopulateListWidgets();
         SavePathSettings();
     }

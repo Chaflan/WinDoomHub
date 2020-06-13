@@ -24,10 +24,10 @@ void PathsDialog::accept() {
 
 void PathsDialog::LoadPaths()
 {
-    ui->lineEditEngine->setText(QString::fromStdString(paths.engines.string()));
-    ui->lineEditIWad->setText(QString::fromStdString(paths.iWads.string()));
-    ui->lineEditArchive->setText(QString::fromStdString(paths.archives.string()));
-    ui->lineEditCustomWad->setText(QString::fromStdString(paths.customWads.string()));
+    ui->lineEditEngine->setText(QString::fromStdString(paths.engines.lexically_normal().string()));
+    ui->lineEditIWad->setText(QString::fromStdString(paths.iWads.lexically_normal().string()));
+    ui->lineEditArchive->setText(QString::fromStdString(paths.archives.lexically_normal().string()));
+    ui->lineEditCustomWad->setText(QString::fromStdString(paths.customWads.lexically_normal().string()));
 }
 
 void PathsDialog::SavePaths()
@@ -42,7 +42,7 @@ void PathsDialog::on_pushButtonEngine_clicked()
 {
     paths.engines = QFileDialog::getExistingDirectory(this, "Select Directory Containing Doom Engines", ui->lineEditEngine->text()).toStdString();
     if (!paths.engines.empty()) {
-        ui->lineEditEngine->setText(QString::fromStdString(paths.engines.string()));
+        ui->lineEditEngine->setText(QString::fromStdString(paths.engines.lexically_normal().string()));
     }
 }
 
@@ -50,7 +50,7 @@ void PathsDialog::on_pushButtonIWad_clicked()
 {
     paths.iWads = QFileDialog::getExistingDirectory(this, "Select Directory Containing Doom IWADs", ui->lineEditIWad->text()).toStdString();
     if (!paths.iWads.empty()) {
-        ui->lineEditIWad->setText(QString::fromStdString(paths.iWads.string()));
+        ui->lineEditIWad->setText(QString::fromStdString(paths.iWads.lexically_normal().string()));
     }
 }
 
@@ -58,7 +58,7 @@ void PathsDialog::on_pushButtonArchive_clicked()
 {
     paths.archives = QFileDialog::getExistingDirectory(this, "Select Directory Containing Doom Archives", ui->lineEditArchive->text()).toStdString();
     if (!paths.archives.empty()) {
-        ui->lineEditArchive->setText(QString::fromStdString(paths.archives.string()));
+        ui->lineEditArchive->setText(QString::fromStdString(paths.archives.lexically_normal().string()));
     }
 }
 
@@ -66,6 +66,6 @@ void PathsDialog::on_pushButtonCustomWad_clicked()
 {
     paths.customWads = QFileDialog::getExistingDirectory(this, "Select Directory Containing Doom WADs", ui->lineEditCustomWad->text()).toStdString();
     if (!paths.customWads.empty()) {
-        ui->lineEditCustomWad->setText(QString::fromStdString(paths.customWads.string()));
+        ui->lineEditCustomWad->setText(QString::fromStdString(paths.customWads.lexically_normal().string()));
     }
 }
