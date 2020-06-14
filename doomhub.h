@@ -27,7 +27,9 @@ private:
 
     QSettings GetSettings() const;
     void LoadPathSettings();
+    void LoadPathSettings(const QSettings& settings);
     void LoadSelectionSettings();
+    void LoadSelectionSettings(const QSettings& settings);
     void SavePathSettings() const;
     void SaveSelectionSettings() const;
 

@@ -21,9 +21,11 @@ DoomHub::DoomHub(QWidget *parent)
     , ui(new Ui::DoomHub)
 {
     ui->setupUi(this);
-    LoadPathSettings();
+
+    QSettings settings = GetSettings();
+    LoadPathSettings(settings);
     PopulateListWidgets();
-    LoadSelectionSettings();
+    LoadSelectionSettings(settings);
     BuildCommand();
 }
 
@@ -38,14 +40,21 @@ QSettings DoomHub::GetSettings() const {
 
 void DoomHub::LoadPathSettings() {
     QSettings settings = GetSettings();
+    LoadPathSettings(settings);
+}
+
+void DoomHub::LoadPathSettings(const QSettings& settings) {
     paths.LoadSettings(settings);
 }
 
 void DoomHub::LoadSelectionSettings() {
     QSettings settings = GetSettings();
+    LoadSelectionSettings(settings);
+}
 
-    // Get the value associated with the key from settings.ini.  Select this value from the lw.
-    auto selectWithSetting = [&settings = std::as_const(settings)] (const QString& settingKey, QListWidget& lw) {
+void DoomHub::LoadSelectionSettings(const QSettings& settings) {
+    // Get the value associated with the settingKey from settings.ini.  Select this value from the lw.
+    auto SelectWithSetting = [&settings = std::as_const(settings)] (const QString& settingKey, QListWidget& lw) {
         QString desiredSelection = settings.value(settingKey).toString();
         const auto& listWidgetList = lw.findItems(desiredSelection, Qt::MatchFlag::MatchExactly);
         if (!listWidgetList.empty()) {
@@ -53,10 +62,10 @@ void DoomHub::LoadSelectionSettings() {
         }
     };
 
-    selectWithSetting("Selections/engines", *(ui->listWidgetEngines));
-    selectWithSetting("Selections/iwads", *(ui->listWidgetIWads));
-    selectWithSetting("Selections/archives", *(ui->listWidgetArchives));
-    selectWithSetting("Selections/wads", *(ui->listWidgetCustomWads));
+    SelectWithSetting("Selections/engines", *(ui->listWidgetEngines));
+    SelectWithSetting("Selections/iwads", *(ui->listWidgetIWads));
+    SelectWithSetting("Selections/archives", *(ui->listWidgetArchives));
+    SelectWithSetting("Selections/cwads", *(ui->listWidgetCustomWads));
 }
 
 void DoomHub::SavePathSettings() const {
@@ -65,20 +74,22 @@ void DoomHub::SavePathSettings() const {
 }
 
 void DoomHub::SaveSelectionSettings() const {
-    const QList<QListWidgetItem*>& selectedEngines = ui->listWidgetEngines->selectedItems();
-    const QList<QListWidgetItem*>& selectedIWads = ui->listWidgetIWads->selectedItems();
-    const QList<QListWidgetItem*>& selectedArchives = ui->listWidgetArchives->selectedItems();
-    const QList<QListWidgetItem*>& selectedCustomWads = ui->listWidgetCustomWads->selectedItems();
-
     QSettings settings = GetSettings();
-    settings.setValue("Selections/engines", selectedEngines.empty() ? "" : (*selectedEngines.begin())->text());
-    settings.setValue("Selections/iwads", selectedIWads.empty() ? "" : (*selectedIWads.begin())->text());
-    settings.setValue("Selections/archives", selectedArchives.empty() ? "" : (*selectedArchives.begin())->text());
-    settings.setValue("Selections/wads", selectedCustomWads.empty() ? "" : (*selectedCustomWads.begin())->text());
+
+    // Set the settings.ini value associated with the settingKey to be the current selection from the list widget
+    auto SetSelectedAsSetting = [&settings](const QString& settingKey, QListWidget& lw){
+        settings.setValue(settingKey, lw.selectedItems().empty() ? "" : (*lw.selectedItems().begin())->text());
+    };
+
+    SetSelectedAsSetting("Selections/engines", *(ui->listWidgetEngines));
+    SetSelectedAsSetting("Selections/iwads", *(ui->listWidgetIWads));
+    SetSelectedAsSetting("Selections/archives", *(ui->listWidgetArchives));
+    SetSelectedAsSetting("Selections/cwads", *(ui->listWidgetCustomWads));
 }
 
 void DoomHub::PopulateListWidgets() {
-
+    // TODO: Best way to pass these , rvale?  If you think about it there should be a way to not allocate and instead
+    // use the compiler for these
     PopulateLookup(enginePathLookup, paths.engines, { ".exe" });
     PopulateLookup(iWadPathLookup, paths.iWads, { ".wad" });
     PopulateLookup(archivePathLookup, paths.archives, { ".pk3", ".pk7", ".pkz", ".pke", ".ipk3", ".ipk7" });
@@ -102,6 +113,10 @@ void DoomHub::PopulateListWidgets() {
     PopulateListWidget(*(ui->listWidgetCustomWads), customWadPathLookup);
 }
 
+// Looks like you can remove the use of fs::path altogether from stored data and use it only in the below method.  QString here would mean
+// Less foolishness.
+
+// Populate the lookup mapping with all files in path (or its subdirectories) that have one of the extensions in the passed set
 void DoomHub::PopulateLookup(std::map<QString, fs::path>& lookup, const fs::path& path, const std::set<std::string>& extensions) {
     lookup.clear();
 
@@ -167,7 +182,6 @@ void DoomHub::on_pushButtonRun_clicked() {
 }
 
 void DoomHub::on_listWidgetEngines_itemSelectionChanged() {
-    // TODO: Make sure you can't select more than one
     BuildCommand();
 }
 void DoomHub::on_listWidgetIWads_itemSelectionChanged() {
@@ -180,6 +194,11 @@ void DoomHub::on_listWidgetCustomWads_itemSelectionChanged() {
     BuildCommand();
 }
 
+// Click the settings > path button:
+// Open the path dialog.  Do nothing on cancel. On ok do the following:
+//      - Unselect all in all list widgets
+//      - Repopulate them with the (presumably) new paths
+//      - Save these new paths to settings.ini
 void DoomHub::on_actionPaths_triggered() {
     PathsDialog p(paths);
     p.setModal(true);
