@@ -88,8 +88,6 @@ void DoomHub::SaveSelectionSettings() const {
 }
 
 void DoomHub::PopulateListWidgets() {
-    // TODO: Best way to pass these , rvale?  If you think about it there should be a way to not allocate and instead
-    // use the compiler for these
     PopulateLookup(enginePathLookup, paths.engines, { ".exe" });
     PopulateLookup(iWadPathLookup, paths.iWads, { ".wad" });
     PopulateLookup(archivePathLookup, paths.archives, { ".pk3", ".pk7", ".pkz", ".pke", ".ipk3", ".ipk7" });
@@ -112,6 +110,8 @@ void DoomHub::PopulateListWidgets() {
     PopulateListWidget(*(ui->listWidgetArchives), archivePathLookup);
     PopulateListWidget(*(ui->listWidgetCustomWads), customWadPathLookup);
 }
+
+// TODO: Try to break your program
 
 // Looks like you can remove the use of fs::path altogether from stored data and use it only in the below method.  QString here would mean
 // Less foolishness.
@@ -154,13 +154,13 @@ void DoomHub::PopulateLookup(std::map<QString, fs::path>& lookup, const fs::path
 void DoomHub::BuildCommand() {
     std::string command;
 
-    // TODO: string_view?
     auto AddToCommandString = [&command](
-            const std::string& prefix,
+            std::string_view prefix,
             const QListWidget& lw,
             const std::map<QString, fs::path>& lookup){
         if (!lw.selectedItems().empty()) {
-            command += prefix + lookup.at(lw.selectedItems().first()->text()).lexically_normal().string();
+            command += prefix;
+            command += lookup.at(lw.selectedItems().first()->text()).lexically_normal().string();
         }
     };
 
