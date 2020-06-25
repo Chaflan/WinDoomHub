@@ -8,8 +8,6 @@
 #include <filesystem>
 #include "paths.h"
 
-namespace fs = std::filesystem;
-
 QT_BEGIN_NAMESPACE
 namespace Ui { class DoomHub; }
 QT_END_NAMESPACE
@@ -23,8 +21,6 @@ public:
     ~DoomHub();
 
 private:
-    // TODO: Consts
-
     QSettings GetSettings() const;
     void LoadPathSettings();
     void LoadPathSettings(const QSettings& settings);
@@ -35,8 +31,8 @@ private:
 
     void PopulateListWidgets();
     static void PopulateLookup(
-            std::map<QString, fs::path>& lookup,
-            const fs::path& path,
+            std::map<QString, QString>& lookup,
+            const QString& path,
             const std::set<std::string>& extensions);
 
     void BuildCommand();
@@ -55,9 +51,9 @@ private:
     Ui::DoomHub *ui;
 
     Paths paths;
-    std::map<QString, fs::path> enginePathLookup;
-    std::map<QString, fs::path> iWadPathLookup;
-    std::map<QString, fs::path> archivePathLookup;
-    std::map<QString, fs::path> customWadPathLookup;
+    std::map<QString, QString> enginePathLookup;
+    std::map<QString, QString> iWadPathLookup;
+    std::map<QString, QString> archivePathLookup;
+    std::map<QString, QString> customWadPathLookup;
 };
 #endif // DOOMHUB_H

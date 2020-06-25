@@ -13,10 +13,10 @@ struct Paths
 
     // TODO: Debate the merits of using a QString or QPath
 
-    fs::path engines;
-    fs::path iWads;
-    fs::path archives;
-    fs::path customWads;
+    QString engines;
+    QString iWads;
+    QString archives;
+    QString customWads;
 };
 
 #endif // PATHS_H

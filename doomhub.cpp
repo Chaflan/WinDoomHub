@@ -98,7 +98,7 @@ void DoomHub::PopulateListWidgets() {
     customWadPathLookup["(None)"] = "";
 
     // Populate lw with the keys of the lookup
-    auto PopulateListWidget = [](QListWidget& lw, const std::map<QString, fs::path>& lookup){
+    auto PopulateListWidget = [](QListWidget& lw, const std::map<QString, QString>& lookup){
         lw.clear();
         for (const auto& [fileName, filePath] : lookup) {
             lw.addItem(fileName);
@@ -117,8 +117,9 @@ void DoomHub::PopulateListWidgets() {
 // Less foolishness.
 
 // Populate the lookup mapping with all files in path (or its subdirectories) that have one of the extensions in the passed set
-void DoomHub::PopulateLookup(std::map<QString, fs::path>& lookup, const fs::path& path, const std::set<std::string>& extensions) {
+void DoomHub::PopulateLookup(std::map<QString, QString>& lookup, const QString& path, const std::set<std::string>& extensions) {
     lookup.clear();
+    fs::path stlPath{ path.toStdString() };
 
     int i = 0;
     const int maxIter = 1000;
@@ -128,12 +129,13 @@ void DoomHub::PopulateLookup(std::map<QString, fs::path>& lookup, const fs::path
     // Upon collision, map "filename (parent path)" -> path, and store
     // the collision name so that we can go back and change its mapping to "filename (parent path)" -> path too.
     // We don't do it now or we wouldn't know about future collisions with that name.
-    for (const auto& e : fs::recursive_directory_iterator(path, fs::directory_options::skip_permission_denied)) {
+    for (const auto& e : fs::recursive_directory_iterator(stlPath, fs::directory_options::skip_permission_denied)) {
         if (extensions.find(e.path().extension().string()) != extensions.end()) {
             QString fileName = QString::fromStdString(e.path().filename().string());
-            if (!lookup.emplace(fileName, e.path()).second) {
-                QString newFileName = fileName + " (" + QString::fromStdString(e.path().parent_path().lexically_normal().string()) + ")";
-                lookup.emplace(std::move(newFileName), e.path());
+            QString mappedPath = QString::fromStdString(e.path().lexically_normal().string());
+            if (!lookup.emplace(fileName, mappedPath).second) {
+                QString newFileName{ fileName + " (" + QString::fromStdString(e.path().parent_path().lexically_normal().string()) + ")" };
+                lookup.emplace(std::move(newFileName), std::move(mappedPath));
                 collisionNames.emplace(std::move(fileName));
             }
         }
@@ -146,21 +148,22 @@ void DoomHub::PopulateLookup(std::map<QString, fs::path>& lookup, const fs::path
     // Fix collision names
     for (const auto& name : collisionNames) {
         auto nodeHandle = lookup.extract(name);
-        nodeHandle.key() = name + " (" + QString::fromStdString(nodeHandle.mapped().parent_path().lexically_normal().string()) + ")";
+        fs::path mappedPath{ nodeHandle.mapped().toStdString() };
+        nodeHandle.key() = name + " (" + QString::fromStdString(mappedPath.parent_path().lexically_normal().string()) + ")";
         lookup.insert(std::move(nodeHandle));
     }
 }
 
 void DoomHub::BuildCommand() {
-    std::string command;
+    QString command;
 
     auto AddToCommandString = [&command](
-            std::string_view prefix,
+            const QString& prefix,
             const QListWidget& lw,
-            const std::map<QString, fs::path>& lookup){
+            const std::map<QString, QString>& lookup){
         if (!lw.selectedItems().empty()) {
             command += prefix;
-            command += lookup.at(lw.selectedItems().first()->text()).lexically_normal().string();
+            command += lookup.at(lw.selectedItems().first()->text());
         }
     };
 
@@ -169,7 +172,7 @@ void DoomHub::BuildCommand() {
     AddToCommandString(" ", (*ui->listWidgetCustomWads), customWadPathLookup);
     AddToCommandString(" -wad ", (*ui->listWidgetIWads), iWadPathLookup);
 
-    ui->plainTextEditCommand->setPlainText(QString::fromStdString(command));
+    ui->plainTextEditCommand->setPlainText(command);
 }
 
 void DoomHub::PlayDoom() const {
