@@ -1,19 +1,19 @@
 #ifndef PATHSDIALOG_H
 #define PATHSDIALOG_H
 
+#include "dirpaths.h"
 #include <QDialog>
-#include "paths.h"
 
 namespace Ui {
 class PathsDialog;
 }
 
-class PathsDialog : public QDialog
-{
+class PathsDialog : public QDialog {
+
     Q_OBJECT
 
 public:
-    explicit PathsDialog(Paths& p, QWidget *parent = nullptr);
+    explicit PathsDialog(DirPaths& p, QWidget* parent = nullptr);
     ~PathsDialog();
 
 public Q_SLOTS:
@@ -31,8 +31,7 @@ private:
 
 private:
     Ui::PathsDialog *ui;
-
-    Paths& paths;
+    DirPaths& paths;
 };
 
 #endif // PATHSDIALOG_H

@@ -16,16 +16,14 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
-    Util.cpp \
+    dirpaths.cpp \
     main.cpp \
     doomhub.cpp \
-    paths.cpp \
     pathsdialog.cpp
 
 HEADERS += \
-    Util.h \
+    dirpaths.h \
     doomhub.h \
-    paths.h \
     pathsdialog.h
 
 FORMS += \

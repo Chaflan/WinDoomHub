@@ -1,20 +1,21 @@
 #include "doomhub.h"
 #include "ui_doomhub.h"
-
-// TODO: Clean these up, and clean up namespace aliases
-// TODO: Put util func in doomhub.
-// TODO: Make util func platform independent with boost or qtlang
-#include <filesystem>
-#include "Util.h"
-#include "QDirIterator"
-#include <iostream>
 #include "pathsdialog.h"
-#include "qmessagebox.h"
-#include <QSettings>
-#include <algorithm>
-#include <QDebug>
+#include <QDirIterator>
+#include <windows.h>
+#include <unordered_set>
 
-namespace fs = std::filesystem;
+//------------------------------------------------------------------------------------------------------------------------------------
+// Template specialization for storing QStrings in STL hash tables.
+//------------------------------------------------------------------------------------------------------------------------------------
+namespace std {
+    template<>
+    struct hash<QString> {
+        size_t operator()(const QString& str) const {
+            return qHash(str);
+        }
+    };
+}
 
 DoomHub::DoomHub(QWidget *parent)
     : QMainWindow(parent)
@@ -29,8 +30,7 @@ DoomHub::DoomHub(QWidget *parent)
     BuildCommand();
 }
 
-DoomHub::~DoomHub()
-{
+DoomHub::~DoomHub() {
     delete ui;
 }
 
@@ -44,7 +44,7 @@ void DoomHub::LoadPathSettings() {
 }
 
 void DoomHub::LoadPathSettings(const QSettings& settings) {
-    paths.LoadSettings(settings);
+    dirPaths.LoadSettings(settings);
 }
 
 void DoomHub::LoadSelectionSettings() {
@@ -70,7 +70,7 @@ void DoomHub::LoadSelectionSettings(const QSettings& settings) {
 
 void DoomHub::SavePathSettings() const {
     QSettings settings = GetSettings();
-    paths.SaveSettings(settings);
+    dirPaths.SaveSettings(settings);
 }
 
 void DoomHub::SaveSelectionSettings() const {
@@ -88,10 +88,10 @@ void DoomHub::SaveSelectionSettings() const {
 }
 
 void DoomHub::PopulateListWidgets() {
-    PopulateLookup(enginePathLookup, paths.engines, { ".exe" });
-    PopulateLookup(iWadPathLookup, paths.iWads, { ".wad" });
-    PopulateLookup(archivePathLookup, paths.archives, { ".pk3", ".pk7", ".pkz", ".pke", ".ipk3", ".ipk7" });
-    PopulateLookup(customWadPathLookup, paths.customWads, { ".wad" });
+    PopulateLookup(enginePathLookup, dirPaths.engines, { "exe" });
+    PopulateLookup(iWadPathLookup, dirPaths.iWads, { "wad" });
+    PopulateLookup(archivePathLookup, dirPaths.archives, { "pk3", "pk7", "pkz", "pke", "ipk3", "ipk7" });
+    PopulateLookup(customWadPathLookup, dirPaths.customWads, { "wad" });
 
     // Archives and custom wads are optional
     archivePathLookup["(None)"] = "";
@@ -111,46 +111,43 @@ void DoomHub::PopulateListWidgets() {
     PopulateListWidget(*(ui->listWidgetCustomWads), customWadPathLookup);
 }
 
-// TODO: Try to break your program
-
-// Looks like you can remove the use of fs::path altogether from stored data and use it only in the below method.  QString here would mean
-// Less foolishness.
-
-// Populate the lookup mapping with all files in path (or its subdirectories) that have one of the extensions in the passed set
-void DoomHub::PopulateLookup(std::map<QString, QString>& lookup, const QString& path, const std::set<std::string>& extensions) {
+//------------------------------------------------------------------------------------------------------------------------------------
+// Populate the lookup mapping with all files in rootDirPath (or its subdirectories) that have one of the extensions in the passed set
+//------------------------------------------------------------------------------------------------------------------------------------
+void DoomHub::PopulateLookup(std::map<QString, QString>& lookup, const QString& rootDirPath, const std::set<QString>& extensions) {
     lookup.clear();
-    fs::path stlPath{ path.toStdString() };
 
-    int i = 0;
-    const int maxIter = 1000;
-    std::set<QString> collisionNames;
+    // Set of file names that collided; had two keys/names of the same value.
+    std::unordered_set<QString> collisions;
 
-    // Iterate through directories and subdirectories and map filename -> path.
-    // Upon collision, map "filename (parent path)" -> path, and store
-    // the collision name so that we can go back and change its mapping to "filename (parent path)" -> path too.
-    // We don't do it now or we wouldn't know about future collisions with that name.
-    for (const auto& e : fs::recursive_directory_iterator(stlPath, fs::directory_options::skip_permission_denied)) {
-        if (extensions.find(e.path().extension().string()) != extensions.end()) {
-            QString fileName = QString::fromStdString(e.path().filename().string());
-            QString mappedPath = QString::fromStdString(e.path().lexically_normal().string());
-            if (!lookup.emplace(fileName, mappedPath).second) {
-                QString newFileName{ fileName + " (" + QString::fromStdString(e.path().parent_path().lexically_normal().string()) + ")" };
-                lookup.emplace(std::move(newFileName), std::move(mappedPath));
-                collisionNames.emplace(std::move(fileName));
+    // Every non colliding name will use this to map "file name" -> "canonical path (path without filename)".
+    std::unordered_map<QString, QString> canonicalPathLookup;
+
+    // Iterate through rootDirPath and subdirs.  Map "file name" -> "full path".  If a key collision happens map "file name (canonical path)" -> "full path".
+    // Store the name in collisions so we can go back and re-key the node we collided with.  We don't do it now in case of future collisions with that name.
+    // All non-collisions store canonical path in canonicalPathLookup for this purpose.
+    QDirIterator it(rootDirPath, QDir::Files, QDirIterator::Subdirectories);
+    for(int i = 0; it.hasNext() && i < 1000; ++i) {
+        QString mapFullPath = QDir::toNativeSeparators(it.next());
+        QFileInfo fileInfo = it.fileInfo();
+
+        if (extensions.find(fileInfo.suffix()) != extensions.end()) {
+            QString keyFileName = fileInfo.fileName();
+            if (lookup.emplace(keyFileName, mapFullPath).second) {
+                canonicalPathLookup.emplace(std::move(keyFileName), fileInfo.canonicalPath());
+            } else {
+                QString keyNewFileName = keyFileName  + " (" + QDir::toNativeSeparators(fileInfo.canonicalPath()) + ")";
+                lookup.emplace(std::move(keyNewFileName), std::move(mapFullPath));
+                collisions.emplace(std::move(keyFileName));
             }
-        }
-
-        if (++i >= maxIter) {
-            break;
         }
     }
 
     // Fix collision names
-    for (const auto& name : collisionNames) {
-        auto nodeHandle = lookup.extract(name);
-        fs::path mappedPath{ nodeHandle.mapped().toStdString() };
-        nodeHandle.key() = name + " (" + QString::fromStdString(mappedPath.parent_path().lexically_normal().string()) + ")";
-        lookup.insert(std::move(nodeHandle));
+    for (const QString& fileName : collisions) {
+        auto nodeHandle = lookup.extract(fileName);
+        nodeHandle.key() = fileName + " (" + QDir::toNativeSeparators(canonicalPathLookup.at(fileName)) + ")";
+        auto ret = lookup.insert(std::move(nodeHandle));
     }
 }
 
@@ -176,7 +173,7 @@ void DoomHub::BuildCommand() {
 }
 
 void DoomHub::PlayDoom() const {
-    Util::ExecuteCommandLine(ui->plainTextEditCommand->toPlainText().toStdString());
+    ExecuteCommandLine(ui->plainTextEditCommand->toPlainText().toStdString());
 }
 
 void DoomHub::on_pushButtonRun_clicked() {
@@ -197,13 +194,15 @@ void DoomHub::on_listWidgetCustomWads_itemSelectionChanged() {
     BuildCommand();
 }
 
+//------------------------------------------------------------------------------------------------------------------------------------
 // Click the settings > path button:
 // Open the path dialog.  Do nothing on cancel. On ok do the following:
 //      - Unselect all in all list widgets
 //      - Repopulate them with the (presumably) new paths
 //      - Save these new paths to settings.ini
+//------------------------------------------------------------------------------------------------------------------------------------
 void DoomHub::on_actionPaths_triggered() {
-    PathsDialog p(paths);
+    PathsDialog p(dirPaths);
     p.setModal(true);
     p.exec();
 
@@ -223,4 +222,41 @@ void DoomHub::on_actionPaths_triggered() {
         PopulateListWidgets();
         SavePathSettings();
     }
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------
+// Execute "commmand" as if it were a string written into the cmd console.  This only works in windows.
+//------------------------------------------------------------------------------------------------------------------------------------
+void DoomHub::ExecuteCommandLine(const std::string& command)
+{
+    // We need to convert to non-const for CreateProcessA
+    char argsCStr[2048];
+    strcpy_s(argsCStr, 2048, command.c_str());
+
+    STARTUPINFOA si;
+    PROCESS_INFORMATION pi;
+
+    // set the size of the structures
+    ZeroMemory(&si, sizeof(si));
+    si.cb = sizeof(si);
+    ZeroMemory(&pi, sizeof(pi));
+
+    // start the program up
+    CreateProcessA
+    (
+        NULL,               // the path to executable
+        argsCStr,           // arguments, or full command
+        NULL,               // Process handle not inheritable
+        NULL,               // Thread handle not inheritable
+        FALSE,              // Set handle inheritance to FALSE
+        CREATE_NEW_CONSOLE, // Opens file in a separate console
+        NULL,               // Use parent's environment block
+        NULL,               // Use parent's starting directory
+        &si,                // Pointer to STARTUPINFO structure
+        &pi                 // Pointer to PROCESS_INFORMATION structure
+    );
+
+    // Close process and thread handles.
+    CloseHandle(pi.hProcess);
+    CloseHandle(pi.hThread);
 }

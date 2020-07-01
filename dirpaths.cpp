@@ -1,14 +1,14 @@
-#include "paths.h"
+#include "dirpaths.h"
 #include <QDir>
 
-void Paths::LoadSettings(const QSettings& settings) {
+void DirPaths::LoadSettings(const QSettings& settings) {
     engines = settings.value("Paths/engines", QDir::rootPath()).toString();
     iWads = settings.value("Paths/iwads", QDir::rootPath()).toString();
     archives = settings.value("Paths/archives", QDir::rootPath()).toString();
     customWads = settings.value("Paths/cwads", QDir::rootPath()).toString();
 }
 
-void Paths::SaveSettings(QSettings& settings) const {
+void DirPaths::SaveSettings(QSettings& settings) const {
     settings.setValue("Paths/engines", engines);
     settings.setValue("Paths/iwads", iWads);
     settings.setValue("Paths/archives", archives);
