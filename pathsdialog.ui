@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>513</width>
-    <height>159</height>
+    <height>158</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -16,6 +16,29 @@
   <property name="windowIcon">
    <iconset resource="doomhub.qrc">
     <normaloff>:/resources/path_icon.png</normaloff>:/resources/path_icon.png</iconset>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">QDialog {
+    background-color: rgb(89, 89, 89);
+}
+
+QLineEdit {
+    color: rgb(107, 0, 0);
+    background-color: rgb(20, 20, 20);
+    selection-background-color: gray;
+    border: 1px solid gray;
+}
+QListView::item:selected:!active {
+    background: rgb(57, 57, 57);
+}
+
+QListView::item:selected:active {
+    background: rgb(121, 121, 121);
+}
+
+QPushButton {
+    background-color: rgb(107, 0, 0);
+}</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>

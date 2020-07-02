@@ -17,6 +17,41 @@
    <iconset resource="doomhub.qrc">
     <normaloff>:/resources/demon_icon.png</normaloff>:/resources/demon_icon.png</iconset>
   </property>
+  <property name="styleSheet">
+   <string notr="true">QMainWindow {
+    background-color: rgb(89, 89, 89);
+}
+
+QGroupBox {
+    color: black;
+}
+
+QListWidget {
+    color: rgb(107, 0, 0);
+    background-color: rgb(20, 20, 20);
+    selection-background-color: gray;
+}
+QListView::item:selected:!active {
+    background: rgb(57, 57, 57);
+}
+
+QListView::item:selected:active {
+    background: rgb(121, 121, 121);
+}
+
+QMenuBar {
+    background-color: gray;
+}
+
+QPlainTextEdit {
+    color: rgb(107, 0, 0);
+    background-color: rgb(20, 20, 20);
+}
+
+QPushButton {
+    background-color: rgb(107, 0, 0);
+}</string>
+  </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
     <item row="0" column="0">
