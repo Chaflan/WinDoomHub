@@ -155,7 +155,7 @@ void DoomHub::BuildCommand() {
     QString command;
 
     auto AddToCommandString = [&command](
-            const QString& prefix,
+            const QLatin1Literal& prefix,
             const QListWidget& lw,
             const std::map<QString, QString>& lookup){
         if (!lw.selectedItems().empty()) {
@@ -164,10 +164,10 @@ void DoomHub::BuildCommand() {
         }
     };
 
-    AddToCommandString("", (*ui->listWidgetEngines), enginePathLookup);
-    AddToCommandString(" ", (*ui->listWidgetArchives), archivePathLookup);
-    AddToCommandString(" ", (*ui->listWidgetCustomWads), customWadPathLookup);
-    AddToCommandString(" -wad ", (*ui->listWidgetIWads), iWadPathLookup);
+    AddToCommandString(QLatin1Literal{ "" }, (*ui->listWidgetEngines), enginePathLookup);
+    AddToCommandString(QLatin1Literal{ " " }, (*ui->listWidgetArchives), archivePathLookup);
+    AddToCommandString(QLatin1Literal{ " " }, (*ui->listWidgetCustomWads), customWadPathLookup);
+    AddToCommandString(QLatin1Literal{ " -wad " }, (*ui->listWidgetIWads), iWadPathLookup);
 
     ui->plainTextEditCommand->setPlainText(command);
 }
