@@ -20,10 +20,10 @@ public Q_SLOTS:
     virtual void accept() override;
 
 private slots:
-    void on_pushButtonEngine_clicked();
-    void on_pushButtonIWad_clicked();
-    void on_pushButtonArchive_clicked();
-    void on_pushButtonCustomWad_clicked();
+    void onPushButtonEngineClicked();
+    void onPushButtonIWadClicked();
+    void onPushButtonArchiveClicked();
+    void onPushButtonCustomWadClicked();
 
 private:
     void LoadPaths();

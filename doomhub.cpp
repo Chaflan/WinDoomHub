@@ -2,26 +2,26 @@
 #include "ui_doomhub.h"
 #include "pathsdialog.h"
 #include <QDirIterator>
+#include <QStringLiteral>
 #include <windows.h>
 #include <unordered_set>
-
-//------------------------------------------------------------------------------------------------------------------------------------
-// Template specialization for storing QStrings in STL hash tables.
-//------------------------------------------------------------------------------------------------------------------------------------
-namespace std {
-    template<>
-    struct hash<QString> {
-        size_t operator()(const QString& str) const {
-            return qHash(str);
-        }
-    };
-}
 
 DoomHub::DoomHub(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::DoomHub)
 {
     ui->setupUi(this);
+
+    QObject::connect(ui->pushButtonRun, &QPushButton::clicked, this, &DoomHub::onPushButtonRunClicked);
+    QObject::connect(ui->listWidgetEngines, &QListWidget::itemSelectionChanged,
+        this, &DoomHub::onListWidgetEnginesItemSelectionChanged);
+    QObject::connect(ui->listWidgetIWads, &QListWidget::itemSelectionChanged,
+        this, &DoomHub::onListWidgetIWadsItemSelectionChanged);
+    QObject::connect(ui->listWidgetArchives, &QListWidget::itemSelectionChanged,
+        this, &DoomHub::onListWidgetArchivesItemSelectionChanged);
+    QObject::connect(ui->listWidgetCustomWads, &QListWidget::itemSelectionChanged,
+        this, &DoomHub::onListWidgetCustomWadsItemSelectionChanged);
+    QObject::connect(ui->actionPaths, &QAction::triggered, this, &DoomHub::onActionPathsTriggered);
 
     QSettings settings = GetSettings();
     LoadPathSettings(settings);
@@ -147,7 +147,7 @@ void DoomHub::PopulateLookup(std::map<QString, QString>& lookup, const QString& 
     for (const QString& fileName : collisions) {
         auto nodeHandle = lookup.extract(fileName);
         nodeHandle.key() = fileName + " (" + QDir::toNativeSeparators(canonicalPathLookup.at(fileName)) + ")";
-        auto ret = lookup.insert(std::move(nodeHandle));
+        lookup.insert(std::move(nodeHandle));
     }
 }
 
@@ -155,7 +155,7 @@ void DoomHub::BuildCommand() {
     QString command;
 
     auto AddToCommandString = [&command](
-            const QLatin1Literal& prefix,
+            const QString& prefix,
             const QListWidget& lw,
             const std::map<QString, QString>& lookup){
         if (!lw.selectedItems().empty()) {
@@ -164,10 +164,10 @@ void DoomHub::BuildCommand() {
         }
     };
 
-    AddToCommandString(QLatin1Literal{ "" }, (*ui->listWidgetEngines), enginePathLookup);
-    AddToCommandString(QLatin1Literal{ " " }, (*ui->listWidgetArchives), archivePathLookup);
-    AddToCommandString(QLatin1Literal{ " " }, (*ui->listWidgetCustomWads), customWadPathLookup);
-    AddToCommandString(QLatin1Literal{ " -wad " }, (*ui->listWidgetIWads), iWadPathLookup);
+    AddToCommandString("", (*ui->listWidgetEngines), enginePathLookup);
+    AddToCommandString(" ", (*ui->listWidgetArchives), archivePathLookup);
+    AddToCommandString(" ", (*ui->listWidgetCustomWads), customWadPathLookup);
+    AddToCommandString(" -wad ", (*ui->listWidgetIWads), iWadPathLookup);
 
     ui->plainTextEditCommand->setPlainText(command);
 }
@@ -176,21 +176,21 @@ void DoomHub::PlayDoom() const {
     ExecuteCommandLine(ui->plainTextEditCommand->toPlainText().toStdString());
 }
 
-void DoomHub::on_pushButtonRun_clicked() {
+void DoomHub::onPushButtonRunClicked() {
     SaveSelectionSettings();
     PlayDoom();
 }
 
-void DoomHub::on_listWidgetEngines_itemSelectionChanged() {
+void DoomHub::onListWidgetEnginesItemSelectionChanged() {
     BuildCommand();
 }
-void DoomHub::on_listWidgetIWads_itemSelectionChanged() {
+void DoomHub::onListWidgetIWadsItemSelectionChanged() {
     BuildCommand();
 }
-void DoomHub::on_listWidgetArchives_itemSelectionChanged() {
+void DoomHub::onListWidgetArchivesItemSelectionChanged() {
     BuildCommand();
 }
-void DoomHub::on_listWidgetCustomWads_itemSelectionChanged() {
+void DoomHub::onListWidgetCustomWadsItemSelectionChanged() {
     BuildCommand();
 }
 
@@ -201,7 +201,7 @@ void DoomHub::on_listWidgetCustomWads_itemSelectionChanged() {
 //      - Repopulate them with the (presumably) new paths
 //      - Save these new paths to settings.ini
 //------------------------------------------------------------------------------------------------------------------------------------
-void DoomHub::on_actionPaths_triggered() {
+void DoomHub::onActionPathsTriggered() {
     PathsDialog p(dirPaths);
     p.setModal(true);
     p.exec();
@@ -209,8 +209,9 @@ void DoomHub::on_actionPaths_triggered() {
     if (p.result() == QDialog::DialogCode::Accepted) {
 
         auto UnselectAllFromWidget = [](QListWidget& lw){
-            for (const auto& item : lw.selectedItems()) {
-                lw.setItemSelected(item, false);
+            const auto& constItems = lw.selectedItems();
+            for (const auto& item : constItems) {
+                item->setSelected(false);
             }
         };
 

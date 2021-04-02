@@ -38,12 +38,12 @@ private:
     static void ExecuteCommandLine(const std::string& command);
 
 private slots:
-    void on_pushButtonRun_clicked();
-    void on_listWidgetEngines_itemSelectionChanged();
-    void on_listWidgetIWads_itemSelectionChanged();
-    void on_listWidgetArchives_itemSelectionChanged();
-    void on_listWidgetCustomWads_itemSelectionChanged();
-    void on_actionPaths_triggered();
+    void onPushButtonRunClicked();
+    void onListWidgetEnginesItemSelectionChanged();
+    void onListWidgetIWadsItemSelectionChanged();
+    void onListWidgetArchivesItemSelectionChanged();
+    void onListWidgetCustomWadsItemSelectionChanged();
+    void onActionPathsTriggered();
 
 private:
     Ui::DoomHub* ui;

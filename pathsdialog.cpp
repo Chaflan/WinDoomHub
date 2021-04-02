@@ -8,6 +8,11 @@ PathsDialog::PathsDialog(DirPaths& p, QWidget *parent) :
     paths(p)
 {
     ui->setupUi(this);
+    QObject::connect(ui->pushButtonEngine, &QPushButton::clicked, this, &PathsDialog::onPushButtonEngineClicked);
+    QObject::connect(ui->pushButtonIWad, &QPushButton::clicked, this, &PathsDialog::onPushButtonIWadClicked);
+    QObject::connect(ui->pushButtonArchive, &QPushButton::clicked, this, &PathsDialog::onPushButtonArchiveClicked);
+    QObject::connect(ui->pushButtonWad, &QPushButton::clicked, this, &PathsDialog::onPushButtonCustomWadClicked);
+
     LoadPaths();
 }
 
@@ -34,28 +39,28 @@ void PathsDialog::SavePaths() {
     paths.customWads = ui->lineEditCustomWad->text();
 }
 
-void PathsDialog::on_pushButtonEngine_clicked() {
+void PathsDialog::onPushButtonEngineClicked() {
     paths.engines = QFileDialog::getExistingDirectory(this, "Select Directory Containing Doom Engines", ui->lineEditEngine->text());
     if (!paths.engines.isEmpty()) {
         ui->lineEditEngine->setText(paths.engines);
     }
 }
 
-void PathsDialog::on_pushButtonIWad_clicked() {
+void PathsDialog::onPushButtonIWadClicked() {
     paths.iWads = QFileDialog::getExistingDirectory(this, "Select Directory Containing Doom IWADs", ui->lineEditIWad->text());
     if (!paths.iWads.isEmpty()) {
         ui->lineEditIWad->setText(paths.iWads);
     }
 }
 
-void PathsDialog::on_pushButtonArchive_clicked() {
+void PathsDialog::onPushButtonArchiveClicked() {
     paths.archives = QFileDialog::getExistingDirectory(this, "Select Directory Containing Doom Archives", ui->lineEditArchive->text());
     if (!paths.archives.isEmpty()) {
         ui->lineEditArchive->setText(paths.archives);
     }
 }
 
-void PathsDialog::on_pushButtonCustomWad_clicked() {
+void PathsDialog::onPushButtonCustomWadClicked() {
     paths.customWads = QFileDialog::getExistingDirectory(this, "Select Directory Containing Doom WADs", ui->lineEditCustomWad->text());
     if (!paths.customWads.isEmpty()) {
         ui->lineEditCustomWad->setText(paths.customWads);
